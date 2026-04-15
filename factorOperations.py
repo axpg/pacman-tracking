@@ -102,7 +102,37 @@ def joinFactors(factors: List[Factor]):
 
 
     "*** YOUR CODE HERE ***"
-    raiseNotDefined()
+    '''
+    seems by pattern in example, conditioned variable in output if the var is
+    never an unconditioned var in any input
+    '''
+    unconditioned_vars = list()
+    conditioned_vars = list()
+    variableDomainDict = dict()
+
+    for factor in factors:
+        conditioned_vars.extend(factor.conditionedVariables())
+        unconditioned_vars.extend(factor.unconditionedVariables())
+        variableDomainDict = factor.variableDomainsDict()
+
+    # remove duplicates
+    unconditioned_vars = set(unconditioned_vars)
+    conditioned_vars = set(conditioned_vars)
+
+    for unc_var in unconditioned_vars:
+        if unc_var in conditioned_vars:
+            conditioned_vars.remove(unc_var)
+
+
+    new_factor = Factor(unconditioned_vars, conditioned_vars, variableDomainDict)
+    assignment_dicts = new_factor.getAllPossibleAssignmentDicts()
+    
+    for assignment_dict in assignment_dicts:
+        running_product = 1
+        for factor in factors:
+            running_product = running_product * factor.getProbability(assignment_dict)
+        new_factor.setProbability(assignment_dict, running_product)
+    return new_factor
     "*** END YOUR CODE HERE ***"
 
 ########### ########### ###########
@@ -153,7 +183,22 @@ def eliminateWithCallTracking(callTrackingList=None):
                     "unconditionedVariables: " + str(factor.unconditionedVariables()))
 
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # completely remove 
+        unconditioned_vars = factor.unconditionedVariables()
+        variableDomainDict = factor.variableDomainsDict()
+        eliminated_domain = factor.variableDomainsDict()[eliminationVariable]
+        # factor.getAllPossibleAssignmentDicts()
+        unconditioned_vars.remove(eliminationVariable)
+        eliminated_factor = Factor(unconditioned_vars, factor.conditionedVariables(), variableDomainDict)
+
+        for assignment_dict in eliminated_factor.getAllPossibleAssignmentDicts():
+            running_sum = 0
+            for eliminated_value in eliminated_domain:
+                assignment_dict[eliminationVariable] = eliminated_value
+                running_sum += factor.getProbability(assignment_dict)
+            eliminated_factor.setProbability(assignment_dict, running_sum)
+
+        return eliminated_factor
         "*** END YOUR CODE HERE ***"
 
     return eliminate

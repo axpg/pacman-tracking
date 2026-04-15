@@ -71,7 +71,6 @@ def constructBayesNet(gameState: hunters.GameState):
     variableDomainsDict[OBS0] = list(x for x in range(max_manhattan_dist))
     variableDomainsDict[OBS1] = list(x for x in range(max_manhattan_dist))
     "*** END YOUR CODE HERE ***"
-
     net = bn.constructEmptyBayesNet(variables, edges, variableDomainsDict)
     return net
 
