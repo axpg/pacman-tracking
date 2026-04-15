@@ -189,10 +189,22 @@ def inferenceByVariableEliminationWithCallTracking(callTrackingList=None):
             eliminationOrder = sorted(list(eliminationVariables))
 
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        currentFactorsList = bayesNet.getAllCPTsWithEvidence(evidenceDict)
+        for eliminated_var in eliminationOrder:
+            # reassign like inferencebyenumeration does
+            # join first
+            currentFactorsList, joined_factor = joinFactorsByVariable(currentFactorsList, eliminated_var)
+            if len(joined_factor.unconditionedVariables()) == 1:
+                #do nothing
+                pass
+            else:
+                # then eliminate
+                eliminated_joined_factors = eliminate(joined_factor, eliminated_var)
+                currentFactorsList.append(eliminated_joined_factors)
+        fullJoint = joinFactors(currentFactorsList)
+        full_joint_normalized = normalize(fullJoint)
+        return full_joint_normalized
         "*** END YOUR CODE HERE ***"
-
-
     return inferenceByVariableElimination
 
 inferenceByVariableElimination = inferenceByVariableEliminationWithCallTracking()
@@ -330,7 +342,11 @@ class DiscreteDistribution(dict):
         {}
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        total = self.total()
+        if total == 0:
+            return
+        for key in self.keys():
+            self[key] = self[key]/total
         "*** END YOUR CODE HERE ***"
 
     def sample(self):
@@ -355,7 +371,7 @@ class DiscreteDistribution(dict):
         0.0
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        return random.choices(self)
         "*** END YOUR CODE HERE ***"
 
 
@@ -430,7 +446,19 @@ class InferenceModule:
         Return the probability P(noisyDistance | pacmanPosition, ghostPosition).
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        #handle special case
+        jail_position = self.getJailPosition()
+        if ghostPosition == jail_position:
+            if noisyDistance is not None:
+                return 0
+            else:
+                return 1
+        else:
+            if noisyDistance is None:
+                return 0
+            true_distance = manhattanDistance(pacmanPosition, ghostPosition)
+            prob = busters.getObservationProbability(noisyDistance, true_distance)
+            return prob
         "*** END YOUR CODE HERE ***"
 
     def setGhostPosition(self, gameState, ghostPosition, index):
@@ -544,7 +572,11 @@ class ExactInference(InferenceModule):
         position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        for position in self.allPositions:
+            curr_belief = self.beliefs[position]
+            observation_prob = self.getObservationProb(observation, gameState.getPacmanPosition(), position, self.getJailPosition())
+            new_beleif = observation_prob * curr_belief
+            self.beliefs[position] = new_beleif
         "*** END YOUR CODE HERE ***"
         self.beliefs.normalize()
     
