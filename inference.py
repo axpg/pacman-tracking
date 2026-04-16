@@ -371,7 +371,13 @@ class DiscreteDistribution(dict):
         0.0
         """
         "*** YOUR CODE HERE ***"
-        return random.choices(self)
+        positions = list()
+        weights = list()
+        for position, weight in self.items():
+            positions.append(position)
+            weights.append(weight)
+        return random.choices(positions, weights=weights, k=1)[0]
+
         "*** END YOUR CODE HERE ***"
 
 
@@ -456,8 +462,8 @@ class InferenceModule:
         else:
             if noisyDistance is None:
                 return 0
-            true_distance = manhattanDistance(pacmanPosition, ghostPosition)
-            prob = busters.getObservationProbability(noisyDistance, true_distance)
+            real_distance = manhattanDistance(pacmanPosition, ghostPosition)
+            prob = busters.getObservationProbability(noisyDistance, real_distance)
             return prob
         "*** END YOUR CODE HERE ***"
 
@@ -594,9 +600,28 @@ class ExactInference(InferenceModule):
         current position is known.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # update your belief in every position on the map
+        # use expression from 8.2
+        '''
+        for old_pos in self.allPositions:
+            new_pos_dist = self.getPositionDistribution(gameState, old_pos)
+            for new_pos in self.allPositions:
+            running_total = 0
+                running_total += = new_pos_dist[new_pos] * self.beliefs[old_pos]
+                self.beliefs[new_pos] = prob_new
+        
+        '''
+        # CANNOT edit the beliefs in place, because this is all in the same timestep
+        timestep_belief = DiscreteDistribution()
+        for new_pos in self.allPositions:
+            running_total_prob = 0
+            for old_pos in self.allPositions:
+                old_pos_dist = self.getPositionDistribution(gameState, old_pos)
+                running_total_prob += old_pos_dist[new_pos] * self.beliefs[old_pos]
+            timestep_belief[new_pos] = running_total_prob
+        self.beliefs = timestep_belief
+        return
         "*** END YOUR CODE HERE ***"
-
     def getBeliefDistribution(self):
         return self.beliefs
 
@@ -626,7 +651,12 @@ class ParticleFilter(InferenceModule):
         """
         self.particles = []
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        particles = list()
+        legal_positions = self.legalPositions
+        # we need to assign ever particle
+        for i in range(self.numParticles):
+            particles.append(legal_positions[i % len(self.legalPositions)])
+        self.particles = particles
         "*** END YOUR CODE HERE ***"
 
     def getBeliefDistribution(self):
@@ -638,7 +668,16 @@ class ParticleFilter(InferenceModule):
         This function should return a normalized distribution.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        # just count occurences
+        occurrences = dict()
+        for position in self.particles:
+            if position not in occurrences:
+                occurrences[position] = 0
+            else:
+                occurrences[position] +=1
+        belief_distribution = DiscreteDistribution(occurrences)
+        belief_distribution.normalize()
+        return belief_distribution
         "*** END YOUR CODE HERE ***"
     
     ########### ########### ###########
@@ -658,7 +697,24 @@ class ParticleFilter(InferenceModule):
         the DiscreteDistribution may be useful.
         """
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
+        pacman_position = gameState.getPacmanPosition()
+        jail_position = self.getJailPosition()
+        # Calculate the weights of all particles as described above.
+        new_distribution = self.getBeliefDistribution()
+        particle_positions = set(self.particles)
+        for particle_position in particle_positions:
+            new_distribution[particle_position] = new_distribution[particle_position] * self.getObservationProb(observation, pacman_position, particle_position, jail_position)
+        if sum(new_distribution.total()) == 0:
+            self.initializeUniformly(gameState)
+        # Else, normalize the distribution of total weights over states and resample your list of particles from this distribution.
+        else: 
+            new_distribution.normalize()
+            new_particles = list()
+            for _ in range(self.numParticles):
+                sample = new_distribution.sample()
+                new_particles.append(sample)
+            self.particles = new_particles
+            
         "*** END YOUR CODE HERE ***"
     
     ########### ########### ###########
