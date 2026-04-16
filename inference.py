@@ -704,7 +704,7 @@ class ParticleFilter(InferenceModule):
         particle_positions = set(self.particles)
         for particle_position in particle_positions:
             new_distribution[particle_position] = new_distribution[particle_position] * self.getObservationProb(observation, pacman_position, particle_position, jail_position)
-        if sum(new_distribution.total()) == 0:
+        if new_distribution.total() == 0:
             self.initializeUniformly(gameState)
         # Else, normalize the distribution of total weights over states and resample your list of particles from this distribution.
         else: 
